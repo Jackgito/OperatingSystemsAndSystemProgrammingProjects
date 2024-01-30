@@ -15,7 +15,7 @@ void reverseAndPrint(FILE *input, FILE *output) {
 
     char line[LINE_SIZE];
 
-    while (fgets(line, LINE_SIZE, input) != NULL) {
+    while (fgets(line, LINE_SIZE, input) != NULL && line[0] != '\n') {
         if (count >= INITIAL_BUFFER_SIZE) {
             // Resize the buffer if more memory is needed
             INITIAL_BUFFER_SIZE *= 2;
