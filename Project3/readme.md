@@ -1,71 +1,45 @@
-# Simple Shell Program
+# Simple Unix Shell (wish)
 
-This is a simple shell program written in C that provides a basic command-line interface. The shell supports commands like changing directories (`cd`), managing the command path (`path`), and executing external commands with input/output redirection.
+This is a simple Unix shell named `wish` that provides basic command-line interpreter functionality. The shell supports several features, including path management, built-in commands (`exit`, `cd`, `path`), input/output redirection, and parallel command execution.
+
+## Program Specifications
+
+### Basic Shell: `wish`
+
+The basic shell, `wish` (Wisconsin Shell), operates interactively in a loop. It prints a prompt (`wish>`) and allows users to enter commands. The shell creates a child process for each command entered, executes the command, and waits for its completion. The loop continues until the user types `exit`.
 
 ## Usage
 
-1. **Compilation:**
+1. Run the shell interactively:
+
    ```bash
-   gcc main.c shell_functions.c -o my_shell
+   ./wish
    ```
 
-2. **Execution:**
+2. Run the shell in batch mode:
+
    ```bash
-   ./my_shell
+   ./wish < batch.txt
    ```
 
-3. **Commands:**
-   - **`cd` Command:**
-     ```bash
-     cd [directory]
-     ```
-     Change the current working directory.
 
-   - **`path` Command:**
-     ```bash
-     path [directory1 directory2 ...]
-     ```
-     Update the path for executable file lookup.
+### Features
 
-   - **`exit` Command:**
-     ```bash
-     exit
-     ```
-     Exit the shell.
+1. **Built-in Commands:**
+   - `exit`: Exits the shell.
+   - `cd`: Changes the current working directory.
+   - `path`: Updates the search path for executables.
 
-   - **Other Commands:**
-     Any other commands entered in the shell will be executed, supporting input/output redirection.
+2. **Path Management:**
+   - The shell maintains a path variable to specify directories to search for executables.
+   - The `path` command updates the search path.
 
-## Features
+3. **Redirection:**
+   - Supports output redirection (`>`) to redirect the standard output to a file.
+   - Supports input redirection (`<`) to read input from a file.
 
-- **Path Management:**
-  - Use the `path` command to specify directories where the shell should look for executable files.
+4. **Parallel Commands:**
+   - Allows launching parallel commands using the ampersand (`&`) operator.
 
-- **Change Directory:**
-  - Use the `cd` command to change the current working directory.
-
-- **Input/Output Redirection:**
-  - Redirect command output (`>`) or input (`<`) as needed.
-
-## Functions
-
-- **`handle_error`:**
-  - Display error messages to stderr.
-
-- **`string_break`:**
-  - Tokenize a user input line for further processing.
-
-- **`print_tokens`:**
-  - Print an array of tokens.
-
-- **`update_path`:**
-  - Update the 'path' variable based on user input.
-
-- **`change_directory`:**
-  - Change the current working directory.
-
-- **`check_redirection`:**
-  - Check if input contains output/input redirection symbols ('>' or '<').
-
-- **`get_path`:**
-  - Construct the full path for execution based on the given path variable.
+5. **Advanced Error Handling**
+   - Descriptive errors for many situations
