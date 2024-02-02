@@ -153,8 +153,7 @@ int main() {
     while (1) {
         printf("wish> ");
 
-        // Use getline function to read the input from the user, it is a
-        // blocking syscall
+        // Use getline function to read the input from the user
         int input_length = getline(&user_input, &input_buffer_size, stdin);
 
         // End of File
@@ -162,45 +161,32 @@ int main() {
             exit(EXIT_SUCCESS);
 
         if (input_length == 1)
-            // If the input string only contains '\n' char, this implies
-            // an empty string, which might just return the prompt to the user
             continue;
-        else {
-            int token_count = tokenize_string(user_input, tokens);
 
-            if (strcmp(tokens[0], "path") == 0) {
-                // Code for path command
-                update_path(tokens + 1);
-                continue;
+        // Tokenize the user input
+        int token_count = tokenize_string(user_input, tokens);
+
+        // Check for parallel commands
+        int parallel_commands = 0;
+        for (int i = 0; i < token_count; i++) {
+            if (strcmp(tokens[i], "&") == 0) {
+                parallel_commands = 1;
+                break;
             }
+        }
 
-            if (strcmp(tokens[0], "cd") == 0) {
-                // Code for cd command
-                change_directory(tokens + 1);
-                continue;
-            }
+        // Execute commands
+        if (parallel_commands) {
+            // Index to separate parallel commands
+            int separator_index = 0;
 
-            if (strcmp(tokens[0], "exit") == 0) {
-                // Code for exit command
-                exit(EXIT_SUCCESS);
-            }
-
-            int redirection_index = check_redirection(tokens, &in_out);
-
-            if ((token_count > redirection_index + 2) && (in_out != 0)) {
-                fprintf(stderr, "Error: Invalid input redirection\n");
-                exit(EXIT_FAILURE);
-            } else {
-                redirection_file = tokens[redirection_index + 1];
-                tokens[redirection_index] = NULL;
-            }
-
-            int ret = construct_full_path(tokens);
-
-            if (ret == -1) {
-                // If the command is not found in the specified path, try executing it as a system command
-                execute_system_command(tokens);
-                continue;
+            // Find the index of "&" and set it to NULL
+            for (int i = 0; i < token_count; i++) {
+                if (strcmp(tokens[i], "&") == 0) {
+                    tokens[i] = NULL;
+                    separator_index = i + 1;
+                    break;
+                }
             }
 
             int process_id = fork();
@@ -208,33 +194,80 @@ int main() {
                 perror("fork");
                 exit(EXIT_FAILURE);
             } else if (process_id == 0) {
-                // When a child is created using the fork call, the value
-                // returned is 0.
-                if (in_out == 1) {
-                    int file_descriptor = creat(redirection_file, 0644);
-                    if (file_descriptor == -1) {
-                        perror("creat");
-                        exit(EXIT_FAILURE);
-                    }
-                    dup2(file_descriptor, STDOUT_FILENO);
-                    dup2(file_descriptor, STDERR_FILENO);
-                    close(file_descriptor);
-                } else if (in_out == 2) {
-                    int file_descriptor = open(redirection_file, O_RDONLY);
-                    if (file_descriptor == -1) {
-                        perror("open");
-                        exit(EXIT_FAILURE);
-                    }
-                    dup2(file_descriptor, STDIN_FILENO);
-                    close(file_descriptor);
-                }
-                int exec_result = execv(tokens[0], tokens);
-                if (exec_result == -1) {
-                    perror("execv");
-                    exit(EXIT_FAILURE);
-                }
+                // Child process
+                // Execute the first command in parallel
+                execute_system_command(tokens);
+                exit(EXIT_SUCCESS);
             } else {
+                // Parent process
+                // Wait for the first command to finish
                 wait(NULL);
+
+                // Execute the second command in parallel
+                execute_system_command(tokens + separator_index);
+            }
+        } else {
+            // Single command
+            if (strcmp(tokens[0], "path") == 0) {
+                // Code for path command
+                update_path(tokens + 1);
+            } else if (strcmp(tokens[0], "cd") == 0) {
+                // Code for cd command
+                change_directory(tokens + 1);
+            } else if (strcmp(tokens[0], "exit") == 0) {
+                // Code for exit command
+                exit(EXIT_SUCCESS);
+            } else {
+                int redirection_index = check_redirection(tokens, &in_out);
+
+                if ((token_count > redirection_index + 2) && (in_out != 0)) {
+                    fprintf(stderr, "Error: Invalid input redirection\n");
+                    exit(EXIT_FAILURE);
+                } else {
+                    redirection_file = tokens[redirection_index + 1];
+                    tokens[redirection_index] = NULL;
+                }
+
+                int ret = construct_full_path(tokens);
+
+                if (ret == -1) {
+                    // If the command is not found in the specified path, try executing it as a system command
+                    execute_system_command(tokens);
+                } else {
+                    int process_id = fork();
+                    if (process_id < 0) {
+                        perror("fork");
+                        exit(EXIT_FAILURE);
+                    } else if (process_id == 0) {
+                        // When a child is created using the fork call, the value
+                        // returned is 0.
+                        if (in_out == 1) {
+                            int file_descriptor = creat(redirection_file, 0644);
+                            if (file_descriptor == -1) {
+                                perror("creat");
+                                exit(EXIT_FAILURE);
+                            }
+                            dup2(file_descriptor, STDOUT_FILENO);
+                            dup2(file_descriptor, STDERR_FILENO);
+                            close(file_descriptor);
+                        } else if (in_out == 2) {
+                            int file_descriptor = open(redirection_file, O_RDONLY);
+                            if (file_descriptor == -1) {
+                                perror("open");
+                                exit(EXIT_FAILURE);
+                            }
+                            dup2(file_descriptor, STDIN_FILENO);
+                            close(file_descriptor);
+                        }
+                        int exec_result = execv(tokens[0], tokens);
+                        if (exec_result == -1) {
+                            perror("execv");
+                            exit(EXIT_FAILURE);
+                        }
+                    } else {
+                        wait(NULL);
+                    }
+                }
             }
         }
     }
