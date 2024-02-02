@@ -1,0 +1,9 @@
+path /usr/bin
+echo
+echo "Printing directory contents: "
+ls
+echo
+echo "Trying to execute command which doesn't exist: "
+nonexistentcommand
+echo
+exit
