@@ -1,3 +1,5 @@
+// This code was used as template for the task: https://github.com/tanishqjasoria/wish
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
